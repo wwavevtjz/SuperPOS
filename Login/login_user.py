@@ -1,5 +1,5 @@
-# ชื่อไฟล์: login_test.py
-# Test Case สำหรับทดสอบฟังก์ชันการทำงานของหน้า Login โดยเฉพาะ
+# ชื่อไฟล์: login_user.py
+# Test Case สำหรับทดสอบฟังก์ชันการทำงานของช่อง "บัญชีผู้ใช้" (Username)
 
 import unittest
 import time
@@ -19,13 +19,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 
-class SuperPOS_LoginFunctionalityTest(unittest.TestCase):
+class SuperPOS_UsernameFieldTest(unittest.TestCase):
 
     # ==================================================================
     # ### ข้อมูลสำหรับ Test Case (แก้ไขได้ที่นี่) ###
-    USERNAME = "testwave"
-    PASSWORD = "testwave"
-    TARGET_MACHINE_ID = "เครื่องรอง"
+    INVALID_USERNAME = "invalid_user_for_testing"
     
     # --- ข้อมูลสำหรับทดสอบช่องกรอก ---
     TEXT_ONLY = "testuser"
@@ -38,7 +36,6 @@ class SuperPOS_LoginFunctionalityTest(unittest.TestCase):
     USERNAME_FIELD_ID = "บัญชีผู้ใช้"
     LOGIN_BUTTON_ID = "เข้าสู่ระบบ"
     PASSWORD_FIELD_ID = "รหัสผ่าน"
-    NEXT_BUTTON_ID = "ถัดไป"
     # ==================================================================
 
     driver = None
@@ -47,7 +44,7 @@ class SuperPOS_LoginFunctionalityTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """[ทำงานครั้งเดียว] ทำการเชื่อมต่อกับ Appium Server เพียงครั้งเดียว"""
-        print("\n--- [Session Setup] Starting Appium Session for Login Tests ---")
+        print("\n--- [Session Setup] Starting Appium Session for Username Field Tests ---")
         options = XCUITestOptions()
         options.load_capabilities(config.desired_caps)
         cls.driver = webdriver.Remote("http://127.0.0.1:4728", options=options)
@@ -83,9 +80,9 @@ class SuperPOS_LoginFunctionalityTest(unittest.TestCase):
         print(f"--- [Test Teardown] Finished {self._testMethodName} ---")
         pass
 
-    def test_01_username_field_typing(self):
+    def test_01_field_interaction(self):
         """Test Case: ตรวจสอบการพิมพ์ในช่อง 'บัญชีผู้ใช้'"""
-        print("\n--- Running Test 01: Username Field Typing ---")
+        print("\n--- Running Test 01: Username Field Typing and Keyboard ---")
         try:
             username_field = self.wait.until(EC.element_to_be_clickable((AppiumBy.ACCESSIBILITY_ID, self.USERNAME_FIELD_ID)))
             
@@ -94,7 +91,7 @@ class SuperPOS_LoginFunctionalityTest(unittest.TestCase):
             self.assertTrue(self.driver.is_keyboard_shown(), "FAIL: Keyboard did not appear.")
             print(" > OK: Keyboard is shown.")
             
-            test_inputs = {"Numbers Only": self.NUMBERS_ONLY, "Special Chars": self.SPECIAL_CHARS}
+            test_inputs = {"Text Only": self.TEXT_ONLY, "Numbers Only": self.NUMBERS_ONLY, "Special Chars": self.SPECIAL_CHARS}
             for description, test_value in test_inputs.items():
                 print(f" > Testing input: {description}...")
                 username_field.clear()
@@ -106,7 +103,7 @@ class SuperPOS_LoginFunctionalityTest(unittest.TestCase):
         except Exception as e:
             self.fail(f"An exception occurred during username typing test: {e}")
 
-    def test_02_username_field_copy_paste_clear(self):
+    def test_02_copy_paste_clear(self):
         """Test Case: ตรวจสอบการคัดลอก, วาง, และลบในช่อง 'บัญชีผู้ใช้'"""
         print("\n--- Running Test 02: Username Field Copy-Paste-Clear ---")
         try:
@@ -126,67 +123,22 @@ class SuperPOS_LoginFunctionalityTest(unittest.TestCase):
         except Exception as e:
             self.fail(f"An exception occurred during username copy-paste test: {e}")
 
-    def test_03_navigate_to_password_screen(self):
-        """Test Case: ตรวจสอบการไปหน้ากรอกรหัสผ่านด้วย Username ที่ถูกต้อง"""
-        print("\n--- Running Test 03: Navigate to Password Screen ---")
+    def test_03_navigate_with_invalid_username(self):
+        """Test Case: ตรวจสอบว่าเมื่อใส่ username ผิด ก็ยังไปหน้ากรอกรหัสผ่าน"""
+        print("\n--- Running Test 03: Navigate to Password with Invalid Username ---")
         try:
-            self.wait.until(EC.element_to_be_clickable((AppiumBy.ACCESSIBILITY_ID, self.USERNAME_FIELD_ID))).send_keys(self.USERNAME)
-            self.wait.until(EC.element_to_be_clickable((AppiumBy.ACCESSIBILITY_ID, self.LOGIN_BUTTON_ID))).click()
+            print(f" > Entering incorrect username: {self.INVALID_USERNAME}")
+            self.wait.until(EC.element_to_be_clickable((AppiumBy.ACCESSIBILITY_ID, self.USERNAME_FIELD_ID))).send_keys(self.INVALID_USERNAME)
             
+            print(" > Clicking 'เข้าสู่ระบบ' button...")
+            self.wait.until(EC.element_to_be_clickable((AppiumBy.ACCESSIBILITY_ID, self.LOGIN_BUTTON_ID))).click()
+
+            print(" > Verifying navigation to password screen...")
             password_field = self.wait.until(EC.presence_of_element_located((AppiumBy.ACCESSIBILITY_ID, self.PASSWORD_FIELD_ID)))
-            self.assertTrue(password_field.is_displayed(), "FAIL: Did not navigate to password screen.")
-            print(" > OK: Successfully navigated to password screen.")
+            self.assertTrue(password_field.is_displayed(), "FAIL: Password field is not visible after entering invalid username.")
+            print(" > OK: Correctly navigated to the password screen even with invalid username.")
         except Exception as e:
-            self.fail(f"An exception occurred during navigation to password screen: {e}")
-
-    def test_04_password_field_functionality(self):
-        """Test Case: ตรวจสอบฟังก์ชันของช่อง 'รหัสผ่าน'"""
-        print("\n--- Running Test 04: Password Field Functionality ---")
-        try:
-            # ไปที่หน้ากรอกรหัสผ่านก่อน
-            self.wait.until(EC.element_to_be_clickable((AppiumBy.ACCESSIBILITY_ID, self.USERNAME_FIELD_ID))).send_keys(self.USERNAME)
-            self.wait.until(EC.element_to_be_clickable((AppiumBy.ACCESSIBILITY_ID, self.LOGIN_BUTTON_ID))).click()
-            
-            password_field = self.wait.until(EC.element_to_be_clickable((AppiumBy.ACCESSIBILITY_ID, self.PASSWORD_FIELD_ID)))
-            
-            print(" > Verifying secure text entry...")
-            password_field.send_keys("test")
-            self.assertNotEqual(password_field.get_attribute("value"), "test")
-            print(" > OK: Password text is obscured.")
-            
-            print(" > Testing Paste & Clear functionality...")
-            self.driver.set_clipboard_text(self.PASTE_STRING)
-            password_field.clear()
-            password_field.send_keys(self.PASTE_STRING)
-            self.assertTrue(password_field.get_attribute("value"))
-            print(" > OK: Paste works correctly.")
-            
-            password_field.clear()
-            self.assertFalse(password_field.get_attribute("value"))
-            print(" > OK: Clear works correctly.")
-            self.driver.hide_keyboard()
-        except Exception as e:
-            self.fail(f"An exception occurred during password field test: {e}")
-
-    def test_05_full_login_flow(self):
-        """Test Case: ทดสอบ Flow การ Login ที่ถูกต้องทั้งหมด"""
-        print("\n--- Running Test 05: Full Successful Login Flow ---")
-        try:
-            self.wait.until(EC.element_to_be_clickable((AppiumBy.ACCESSIBILITY_ID, self.USERNAME_FIELD_ID))).send_keys(self.USERNAME)
-            self.wait.until(EC.element_to_be_clickable((AppiumBy.ACCESSIBILITY_ID, self.LOGIN_BUTTON_ID))).click()
-            
-            password_field = self.wait.until(EC.element_to_be_clickable((AppiumBy.ACCESSIBILITY_ID, self.PASSWORD_FIELD_ID)))
-            password_field.send_keys(self.PASSWORD)
-            self.wait.until(EC.element_to_be_clickable((AppiumBy.ACCESSIBILITY_ID, self.LOGIN_BUTTON_ID))).click()
-            
-            self.wait.until(EC.element_to_be_clickable((AppiumBy.ACCESSIBILITY_ID, self.TARGET_MACHINE_ID))).click()
-            self.wait.until(EC.element_to_be_clickable((AppiumBy.ACCESSIBILITY_ID, self.NEXT_BUTTON_ID))).click()
-            
-            pin_pad_element = self.wait.until(EC.presence_of_element_located((AppiumBy.ACCESSIBILITY_ID, "1")))
-            self.assertTrue(pin_pad_element.is_displayed(), "FAIL: Did not navigate to PIN screen.")
-            print(" > OK: Successfully navigated to PIN screen.")
-        except Exception as e:
-            self.fail(f"An exception occurred during the full login flow test: {e}")
+            self.fail(f"An exception occurred during navigation with invalid username test: {e}")
 
 
 if __name__ == '__main__':

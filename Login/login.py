@@ -1,6 +1,3 @@
-# ชื่อไฟล์: new_flow_test.py
-# Test Case สำหรับเริ่มต้น Flow การทดสอบใหม่
-
 import unittest
 import time
 import sys
@@ -26,6 +23,7 @@ class SuperPOS_NewFlowTest(unittest.TestCase):
     USERNAME = "testwave"
     PASSWORD = "testwave"
     TARGET_MACHINE_ID = "เครื่องรอง"
+    #TARGET_MACHINE_ID = "เครื่องหลัก"
     PIN_CODE = "888888" # <--- ใส่รหัส PIN ที่ถูกต้องตรงนี้
     
     # --- ตัวระบุตำแหน่ง (Locators) ---
@@ -120,7 +118,7 @@ class SuperPOS_NewFlowTest(unittest.TestCase):
             # print(" > Now clicking 'สมาชิก' button...")
             # self.wait.until(EC.element_to_be_clickable((AppiumBy.ACCESSIBILITY_ID, "สมาชิก"))).click()
             
-            time.sleep(5) # หยุดรอ 5 วินาทีเพื่อดูผลลัพธ์
+            time.sleep(5) 
 
         except Exception as e:
             error_screenshot_name = "error_new_flow_test.png"
