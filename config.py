@@ -13,6 +13,6 @@ desired_caps = {
     "appium:wdaLocalPort": 8101,
     "appium:newCommandTimeout": 180,
     # ### สำคัญ! เอา # ออกแล้วใส่ Team ID 10 หลักของคุณ ###
-    # "xcodeOrgId": "YOUR_TEAM_ID_HERE",
+    # "xcodeOrgId": "Y24TMM64424",
     # "xcodeSigningId": "Apple Developer"
 }

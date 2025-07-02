@@ -1,8 +1,15 @@
-# ชื่อไฟล์: full_happy_path_test_updated.py
-
 import unittest
 import time
 import datetime
+import sys
+import os
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
+
+import config
+
 from appium import webdriver
 from appium.options.ios import XCUITestOptions
 from appium.webdriver.common.appiumby import AppiumBy
@@ -10,43 +17,30 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
-# --- 1. ตั้งค่าการเชื่อมต่อ (Desired Capabilities) ---
-desired_caps = {
-    "platformName": "iOS",
-    "appium:platformVersion": "18.5",
-    "appium:deviceName": "ipad wave",
-    "appium:udid": "00008030-001169883CDA202E",
-    "appium:automationName": "XCUITest",
-    "bundleId": "com.gourmet.superpos",
-    "appium:wdaLocalPort": 8101,
-    "appium:newCommandTimeout": 180,
-    # "xcodeOrgId": "YOUR_TEAM_ID_HERE",
-    # "xcodeSigningId": "Apple Developer"
-}
 
 class SuperPOS_FullFlowTest(unittest.TestCase):
 
-    # ==================================================================
-    # ### 2. ตั้งค่า Test Case ของคุณตรงนี้ ###
-    #
-    USERNAME = "foodcen"
-    PASSWORD = "foodcen"
+    USERNAME = "testwave"
+    PASSWORD = "testwave"
     TARGET_MACHINE_ID = "เครื่องรอง"
-    MANUAL_WAIT_TIME = 10
+    MANUAL_WAIT_TIME = 5
 
     # --- ข้อมูลสำหรับกรอกฟอร์มสมาชิก ---
-    NEW_MEMBER_FULLNAME = "สมชาย ใจดี ทดสอบ"
-    NEW_MEMBER_NICKNAME = "ชาย"
-    # อัปเดตข้อมูลให้ตรงกับการทดสอบล่าสุด
-    BIRTH_YEAR = "2005" 
+    NEW_MEMBER_FULLNAME = "สมชาย ทดสอบ"
+    NEW_MEMBER_NICKNAME = "คิม"
+    BIRTH_YEAR = "2003" 
     BIRTH_MONTH = "Jun" 
-    BIRTH_DAY = "19" 
+    BIRTH_DAY = "21" 
+    GENDER_SELECTION = "ชาย" # ตัวเลือก: "ชาย", "หญิง", "ไม่ระบุ"
+    NEW_MEMBER_EMAIL = "somchai.test@gmail.com" # เพิ่มข้อมูลอีเมล
+    NEW_MEMBER_ADDRESS = "365/2 นนทบุรี 1120"
+    NEW_MEMBER_PHONE = "0998285433"
     # ==================================================================
 
     def setUp(self):
         """ทำการเชื่อมต่อกับ Appium Server"""
         options = XCUITestOptions()
-        options.load_capabilities(desired_caps)
+        options.load_capabilities(config.desired_caps)
         self.driver = webdriver.Remote("http://127.0.0.1:4728", options=options)
         print("\n--- Starting Full Flow Test ---")
 
@@ -120,10 +114,15 @@ class SuperPOS_FullFlowTest(unittest.TestCase):
             full_name_field = wait.until(EC.element_to_be_clickable((AppiumBy.IOS_PREDICATE, full_name_predicate)))
             full_name_field.click(); time.sleep(0.5); full_name_field.send_keys(self.NEW_MEMBER_FULLNAME)
             print(f" > OK: Typed Full Name '{self.NEW_MEMBER_FULLNAME}'.")
+            self.driver.hide_keyboard()
+            time.sleep(1)
+
             nickname_predicate = "type == 'XCUIElementTypeTextField' AND (name CONTAINS 'ชื่อเล่น' OR label CONTAINS 'ชื่อเล่น')"
             nickname_field = wait.until(EC.element_to_be_clickable((AppiumBy.IOS_PREDICATE, nickname_predicate)))
             nickname_field.click(); time.sleep(0.5); nickname_field.send_keys(self.NEW_MEMBER_NICKNAME)
             print(f" > OK: Typed Nickname '{self.NEW_MEMBER_NICKNAME}'.")
+            self.driver.hide_keyboard()
+            time.sleep(1)
 
             # --- เลือกวันเกิด ---
             print(" > Attempting to select birthday by swiping on the CORRECT container...")
@@ -160,12 +159,66 @@ class SuperPOS_FullFlowTest(unittest.TestCase):
             print(" > Waiting for calendar to re-render...")
             time.sleep(2)
 
-            # === จุดที่อัปเดต: ใช้ Predicate ที่ถูกต้องในการเลือกวัน ===
+            # --- เลือกวัน ---
             print(f" > Selecting StaticText element that starts with: '{self.BIRTH_DAY},'")
-            # Predicate นี้จะหา element ที่เป็น StaticText, และมี name (accessibility id) ที่ขึ้นต้นด้วยเลขวันตามด้วยคอมม่า
             day_predicate = f"type == 'XCUIElementTypeStaticText' AND name BEGINSWITH '{self.BIRTH_DAY},'"
-            wait.until(EC.element_to_be_clickable((AppiumBy.IOS_PREDICATE, day_predicate))).click()
+            day_element = wait.until(EC.presence_of_element_located((AppiumBy.IOS_PREDICATE, day_predicate)))
+            
+            location = day_element.location
+            size = day_element.size
+            tap_x = location['x'] + (size['width'] / 2)
+            tap_y = location['y'] + (size['height'] / 2)
+
+            print(f" > Tapping on the found element's center coordinates ({int(tap_x)}, {int(tap_y)}) with 'mobile: tap'")
+            self.driver.execute_script("mobile: tap", {"x": int(tap_x), "y": int(tap_y)})
+            
             print(" > OK: Birthday selected.")
+
+            print(" > Clicking OK button to close the date picker...")
+            wait.until(EC.element_to_be_clickable((AppiumBy.ACCESSIBILITY_ID, "OK"))).click()
+            print(" > OK: Closed date picker.")
+            time.sleep(1)
+
+            # --- เลือกเพศ ---
+            print(f" > Selecting gender: '{self.GENDER_SELECTION}'")
+            wait.until(EC.element_to_be_clickable((AppiumBy.ACCESSIBILITY_ID, self.GENDER_SELECTION))).click()
+            print(" > OK: Gender selected.")
+
+            # --- กรอก E-mail ---
+            print(f" > Typing email: '{self.NEW_MEMBER_EMAIL}'")
+            email_predicate = "type == 'XCUIElementTypeTextField' AND (name CONTAINS 'E-mail' OR label CONTAINS 'E-mail')"
+            email_field = wait.until(EC.element_to_be_clickable((AppiumBy.IOS_PREDICATE, email_predicate)))
+            email_field.click(); time.sleep(0.5)
+            email_field.send_keys(self.NEW_MEMBER_EMAIL)
+            print(" > OK: Email typed.")
+            self.driver.hide_keyboard()
+            time.sleep(1)
+
+            # --- กรอกที่อยู่ ---
+            print(f" > Typing Address: '{self.NEW_MEMBER_ADDRESS}'")
+            address_predicate = "type == 'XCUIElementTypeTextField' AND (name CONTAINS 'ที่อยู่' OR label CONTAINS 'ที่อยู่')"
+            address_field = wait.until(EC.element_to_be_clickable((AppiumBy.IOS_PREDICATE, address_predicate)))
+            address_field.click(); time.sleep(0.5)
+            address_field.send_keys(self.NEW_MEMBER_ADDRESS)
+            print(" > OK: Address typed.")
+            self.driver.hide_keyboard()
+            time.sleep(1)
+
+            # --- กรอกเบอร์โทรศัพท์ ---
+            print(f" > Typing Phone: '{self.NEW_MEMBER_PHONE}'")
+            phone_predicate = "type == 'XCUIElementTypeTextField' AND (name CONTAINS 'เบอร์โทรศัพท์' OR label CONTAINS 'เบอร์โทรศัพท์')"
+            phone_field = wait.until(EC.element_to_be_clickable((AppiumBy.IOS_PREDICATE, phone_predicate)))
+            phone_field.click(); time.sleep(0.5)
+            phone_field.send_keys(self.NEW_MEMBER_PHONE)
+            print(" > OK: Phone Typed.")
+            self.driver.hide_keyboard()
+            time.sleep(1)
+
+            # === จุดที่อัปเดต: กดปุ่มบันทึก ===
+            print(" > Clicking Save button...")
+            wait.until(EC.element_to_be_clickable((AppiumBy.ACCESSIBILITY_ID, "บันทึก"))).click()
+            print(" > OK: Save button clicked.")
+
 
         except TimeoutException as e:
             error_screenshot_name = "error_timeout_screenshot.png"
